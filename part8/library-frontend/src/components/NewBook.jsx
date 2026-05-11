@@ -16,9 +16,12 @@ const ADD_BOOK = gql`
       genres: $genres
     ) {
       title
-      author
+      author {
+        name
+      }
       published
       genres
+      id
     }
   }
 `
@@ -27,8 +30,11 @@ const ALL_BOOKS = gql`
   query {
     allBooks {
       title
-      author
+      author {
+        name
+      }
       published
+      id
     }
   }
 `
