@@ -6,6 +6,8 @@ const connectToDatabase = async (uri) => {
     process.exit(1)
   }
 
+  console.log("connecting to MongoDB")
+
   try {
     await mongoose.connect(uri)
     console.log("connected to MongoDB")
