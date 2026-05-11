@@ -5,6 +5,7 @@ const bookSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 5,
+    unique: true,
   },
   published: {
     type: Number,
