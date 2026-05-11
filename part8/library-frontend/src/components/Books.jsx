@@ -12,11 +12,11 @@ const ALL_BOOKS = gql`
 `
 
 const Books = (props) => {
+  const result = useQuery(ALL_BOOKS, { skip: !props.show })
+
   if (!props.show) {
     return null
   }
-
-  const result = useQuery(ALL_BOOKS)
 
   if (result.loading) {
     return <div>loading...</div>
