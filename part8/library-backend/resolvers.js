@@ -1,6 +1,8 @@
 const Author = require("./models/author")
 const Book = require("./models/book")
+const User = require("./models/user")
 const { GraphQLError } = require("graphql")
+const jwt = require("jsonwebtoken")
 
 const formatMutationError = (error, invalidArgs) =>
   new GraphQLError(error.message, {
@@ -10,6 +12,16 @@ const formatMutationError = (error, invalidArgs) =>
       error,
     },
   })
+
+const requireAuth = (currentUser) => {
+  if (!currentUser) {
+    throw new GraphQLError("not authenticated", {
+      extensions: {
+        code: "UNAUTHENTICATED",
+      },
+    })
+  }
+}
 
 const resolvers = {
   Query: {
@@ -35,9 +47,12 @@ const resolvers = {
       return Book.find(query).populate("author")
     },
     allAuthors: async () => Author.find({}),
+    me: (root, args, context) => context.currentUser,
   },
   Mutation: {
-    addBook: async (root, args) => {
+    addBook: async (root, args, context) => {
+      requireAuth(context.currentUser)
+
       try {
         let author = await Author.findOne({ name: args.author })
 
@@ -59,7 +74,9 @@ const resolvers = {
         throw formatMutationError(error, [args.title, args.author])
       }
     },
-    editAuthor: async (root, args) => {
+    editAuthor: async (root, args, context) => {
+      requireAuth(context.currentUser)
+
       const author = await Author.findOne({ name: args.name })
 
       if (!author) {
@@ -72,6 +89,45 @@ const resolvers = {
       } catch (error) {
         throw formatMutationError(error, args.name)
       }
+    },
+    createUser: async (root, args) => {
+      const user = new User({
+        username: args.username,
+        favoriteGenre: args.favoriteGenre,
+      })
+
+      try {
+        return await user.save()
+      } catch (error) {
+        throw formatMutationError(error, [args.username, args.favoriteGenre])
+      }
+    },
+    login: async (root, args) => {
+      const user = await User.findOne({ username: args.username })
+
+      if (!user || args.password !== "secret") {
+        throw new GraphQLError("wrong credentials", {
+          extensions: {
+            code: "BAD_USER_INPUT",
+            invalidArgs: args.username,
+          },
+        })
+      }
+
+      if (!process.env.JWT_SECRET) {
+        throw new GraphQLError("JWT_SECRET is not defined", {
+          extensions: {
+            code: "INTERNAL_SERVER_ERROR",
+          },
+        })
+      }
+
+      const userForToken = {
+        username: user.username,
+        id: user._id,
+      }
+
+      return { value: jwt.sign(userForToken, process.env.JWT_SECRET) }
     },
   },
   Book: {
