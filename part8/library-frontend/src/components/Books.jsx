@@ -43,6 +43,10 @@ const Books = (props) => {
 
   const books = result.data.allBooks
   const genres = [...new Set(genresResult.data.allBooks.flatMap((book) => book.genres))]
+  const selectGenre = (nextGenre) => {
+    setGenre(nextGenre)
+    result.refetch({ genre: nextGenre })
+  }
 
   return (
     <div>
@@ -68,11 +72,11 @@ const Books = (props) => {
 
       <div>
         {genres.map((currentGenre) => (
-          <button key={currentGenre} onClick={() => setGenre(currentGenre)}>
+          <button key={currentGenre} onClick={() => selectGenre(currentGenre)}>
             {currentGenre}
           </button>
         ))}
-        <button onClick={() => setGenre(null)}>all genres</button>
+        <button onClick={() => selectGenre(null)}>all genres</button>
       </div>
     </div>
   )
